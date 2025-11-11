@@ -272,6 +272,30 @@ npx prisma migrate reset
 npx prisma migrate dev
 ```
 
+## 🧪 Testando o Sistema
+
+### Fluxo Completo de Admissão
+
+1. **Acesse a aplicação**: http://localhost:3000
+2. **Candidate-se**: Clique em "Quero Participar" e preencha o formulário
+3. **Área Admin**: Acesse http://localhost:3000/admin
+   - Visualize a aplicação submetida
+   - Aprove o candidato
+   - Copie o link de convite gerado (verifique o console do backend)
+4. **Complete o cadastro**: Acesse o link de convite copiado
+   - Preencha os dados adicionais
+   - Finalize o cadastro
+5. **Verificação**: Confira os logs no terminal do backend para ver as confirmações
+
+### Verificando o Banco de Dados
+
+```bash
+cd backend
+npx prisma studio
+```
+
+Abra http://localhost:5555 para visualizar os dados no Prisma Studio.
+
 ## 📖 Documentação Adicional
 
 - [Arquitetura do Sistema](./arquitetura.md)
