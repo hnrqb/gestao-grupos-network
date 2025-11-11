@@ -2,7 +2,30 @@
 
 ## Visão Geral
 
-O objetivo desta plataforma é centralizar a gestão de um grupo de networking com foco em geração de negócios, contemplando desde o funil de entrada de novos membros até o acompanhamento de performance e finanças. A solução proposta utiliza um monorepositório com Next.js (App Router) para o frontend e uma camada de backend em Node.js (NestJS), apoiada por PostgreSQL como banco de dados relacional. Serviços auxiliares como Redis, object storage e um pipeline próprio de autenticação por JWT garantem escalabilidade, segurança e boa experiência de uso.
+Esta plataforma digitaliza a gestão de grupos de networking focados em geração de negócios. A solução é composta por duas aplicações separadas: **Frontend** (Next.js + React) e **Backend** (Node.js/NestJS), conectadas via API REST, com banco de dados PostgreSQL e Prisma ORM.
+
+O sistema implementa um fluxo completo de admissão de membros, desde a intenção de participação até o cadastro completo do novo membro.
+
+### Stack Tecnológica
+
+- **Frontend**: Next.js 14+ com React e TypeScript
+- **Backend**: NestJS com TypeScript  
+- **Banco de Dados**: PostgreSQL
+- **ORM**: Prisma
+- **Validação Frontend**: React Hook Form + Zod
+- **Validação Backend**: class-validator + class-transformer
+- **Estilização**: Tailwind CSS
+- **HTTP Client**: Axios
+
+### Estrutura do Projeto
+
+```
+gestao-grupos-network/
+├── frontend/          # Aplicação Next.js
+├── backend/           # Aplicação NestJS
+├── README.md          # Instruções de instalação
+└── arquitetura.md     # Este documento
+```
 
 ## Diagrama de Arquitetura
 
@@ -68,109 +91,477 @@ graph TB
     class G,H external
 ```
 
-- **Next.js App Router**: entrega páginas (SSR/SSG) e duas camadas de API: rotas públicas (formulários) e rotas autenticadas (BFF) que se comunicam via HTTPS com a API core.
-- **NestJS Core API**: encapsula domínios como Membros, Reuniões, Indicações, Financeiro e Autenticação. Emite e valida JWTs, expõe endpoints REST e publica eventos assíncronos em filas.
-- **PostgreSQL**: persistência principal. Optamos por um banco relacional para garantir integridade referencial, queries analíticas e suporte a relatórios.
-- **Redis**: usado para caching de dashboards, métricas e orquestração de filas BullMQ (envio de e-mails, notificações).
-- **Object Storage**: armazenamento de anexos (ex.: contratos, comprovantes).
-- **Serviço de E-mail**: envio de notificações operacionais (aprovação, lembretes, cobranças).
-- **Banco NoSQL**: persistência de notificações, preferências de entrega e histórico em tempo quase real para suportar fan-out e consultas flexíveis.
-- **Autenticação JWT**: emitida e validada pela própria API NestJS. Tokens stateless sem necessidade de armazenamento em cache, com refresh tokens gerenciados pela aplicação.
+### Componentes da Arquitetura
 
-## Modelo de Dados (PostgreSQL)
+- **Frontend (Next.js)**: aplicação em pasta separada (`frontend/`) com páginas públicas e administrativas. Consome a API backend via HTTP.
+- **Backend (NestJS)**: aplicação em pasta separada (`backend/`) que expõe API REST usando NestJS com Prisma ORM.
+- **PostgreSQL + Prisma**: banco de dados relacional com ORM Prisma para type-safety e migrações.
+- **Redis**: usado para cache simples (opcional).
+- **Object Storage**: pode usar sistema de arquivos local.
+- **Serviço de E-mail**: simulado com `console.log()` para desenvolvimento.
+- **Autenticação**: autenticação admin simples via variável de ambiente.
 
-### Entidades Principais
+## Fluxo de Admissão de Membros
 
-| Tabela | Campos (tipo, descrição) | Observações |
-| --- | --- | --- |
-| `users` | `id (uuid PK)`, `email (varchar, unique)`, `password_hash (varchar, opcional)`, `role (enum: admin, member, guest)`, `status (enum: invited, active, suspended)`, `created_at`, `updated_at` | Identidade dos usuários. Admins e membros autenticados. |
-| `member_profiles` | `id (uuid PK)`, `user_id (uuid FK users)`, `full_name`, `company`, `position`, `segment`, `bio`, `phone`, `social_links (jsonb)`, `joined_at`, `avatar_url` | Dados complementares do membro. |
-| `applications` | `id (uuid PK)`, `email`, `full_name`, `company`, `segment`, `pitch_text`, `status (enum: pending, approved, rejected)`, `reviewed_by (uuid FK users)`, `reviewed_at`, `created_at` | Intenções de participação submetidas pelo formulário público. |
-| `announcements` | `id (uuid PK)`, `title`, `body`, `audience (enum: all, admins)`, `publish_at`, `created_by (uuid FK users)`, `created_at`, `updated_at` | Comunicados. |
-| `meetings` | `id (uuid PK)`, `type (enum: weekly, one_on_one, special)`, `title`, `scheduled_at`, `location`, `agenda`, `created_by (uuid FK users)` | Reuniões do grupo. |
-| `meeting_attendance` | `id (uuid PK)`, `meeting_id (uuid FK meetings)`, `member_id (uuid FK users)`, `status (enum: present, absent, guest)`, `checked_in_at` | Controle de presença. |
-| `referrals` | `id (uuid PK)`, `from_member_id (uuid FK users)`, `to_member_id (uuid FK users)`, `prospect_name`, `prospect_contact`, `description`, `value_estimate`, `status (enum: sent, in_progress, closed_won, closed_lost)`, `closed_at`, `created_at` | Indicações de negócios. |
-| `gratitudes` | `id (uuid PK)`, `referral_id (uuid FK referrals)`, `message`, `created_by (uuid FK users)`, `created_at` | “Obrigados” vinculados a negócios fechados. |
-| `one_on_one_sessions` | `id (uuid PK)`, `host_id (uuid FK users)`, `guest_id (uuid FK users)`, `scheduled_at`, `notes`, `completed_at` | Controle de reuniões 1:1. |
-| `metrics_snapshots` | `id (uuid PK)`, `member_id`, `period_start`, `period_end`, `metric_type (enum)`, `value`, `created_at` | Base para dashboards e relatórios agregados. |
-| `invoices` | `id (uuid PK)`, `member_id (uuid FK users)`, `amount`, `due_date`, `status (enum: pending, paid, overdue, canceled)`, `reference_period`, `issued_at`, `paid_at`, `payment_reference` | Controle financeiro de mensalidades. |
-| `audit_logs` | `id (uuid PK)`, `entity`, `entity_id`, `action`, `performed_by`, `payload (jsonb)`, `created_at` | Trilhas de auditoria para ações críticas. |
+Módulo principal que implementa o processo completo de admissão de novos membros.
 
-### Relacionamentos e Considerações
+### Fluxograma do Processo
 
-- `users` 1:N `member_profiles` (1:1 conceitual, porém 1:N para flexibilidade futura).
-- `users` 1:N `referrals` (como remetente e destinatário).
-- `meetings` 1:N `meeting_attendance`.
-- `referrals` 1:N `gratitudes`.
-- `users` 1:N `invoices`; `invoices` correlacionam-se com `metrics_snapshots` para KPIs financeiros.
-- Uso de `enum` nativo do PostgreSQL para status críticos. Campos textuais longos como `body` ou `description` definidos como `text`.
-- `metrics_snapshots` alimentados por rotinas agendadas (cron jobs) que agregam dados de `referrals`, `meeting_attendance` e `invoices`.
+```mermaid
+graph TD
+    A[Candidato acessa /apply] --> B[Preenche formulário]
+    B --> C{Validação OK?}
+    C -->|Não| B
+    C -->|Sim| D[Cria Application status: pending]
+    D --> E[Mensagem de sucesso]
+    
+    F[Admin acessa /admin] --> G[Lista Applications]
+    G --> H{Ação do Admin}
+    
+    H -->|Aprovar| I[Gera token único]
+    I --> J[Cria InvitationToken]
+    J --> K[Atualiza status: approved]
+    K --> L[console.log link de convite]
+    
+    H -->|Rejeitar| M[Adiciona motivo rejeição]
+    M --> N[Atualiza status: rejected]
+    
+    O[Candidato acessa /register/:token] --> P{Token válido?}
+    P -->|Não| Q[Erro: Token inválido ou expirado]
+    P -->|Sim| R[Carrega dados da Application]
+    R --> S[Preenche formulário expandido]
+    S --> T{Validação OK?}
+    T -->|Não| S
+    T -->|Sim| U[Cria Member completo]
+    U --> V[Marca token como usado]
+    V --> W[Mensagem de sucesso]
+```
 
-## Estrutura de Componentes (Frontend Next.js)
+### 1. Página de Intenção (Pública)
 
-- **`app/`**: rotas do Next.js (App Router). Subpastas para áreas públicas (`/apply`) e autenticadas (`/dashboard`, `/admin`). Uso de layouts segmentados.
-- **`components/ui/`**: biblioteca de componentes atômicos (botões, inputs, tabelas, modais) com estilização consistente (ex.: Tailwind + Radix UI).
-- **`components/forms/`**: formulários reutilizáveis com React Hook Form/Zod (validação compartilhada com backend).
-- **`components/features/`**: componentes especializados por domínio (ex.: `applications/ApplicationReviewTable`, `meetings/AttendanceTable`, `referrals/ReferralPipeline`).
-- **`modules/` ou **`features/`**: pastas que agrupam lógica de estado, hooks (`useReferrals`, `useAttendance`), chamadas à API e páginas específicas.
-- **Estado Global**: utilização de Zustand ou Redux Toolkit para estados compartilhados (ex.: sessão do usuário, filtros globais). React Query para gerenciamento de requests e cache de dados.
-- **Internacionalização e Acessibilidade**: Next-intl para i18n; componentes UI seguindo WCAG.
-- **Testes**: Testing Library + Playwright (E2E). Estrutura espelhada em `__tests__`.
+**Rota**: `/apply`
 
-## Definição de API (REST)
+**Funcionalidades**:
+- Formulário público acessível sem autenticação
+- Campos obrigatórios:
+  - Nome completo
+  - Email
+  - Empresa
+  - "Por que você quer participar?" (campo texto longo)
+- Validação client-side e server-side
+- Feedback de sucesso após submissão
 
-### 1. Integração de Candidaturas (Membership Applications)
+### 2. Área Administrativa
 
-- **POST `/api/public/applications`**
-  - Request: `{ "email": "string", "fullName": "string", "company": "string", "segment": "string", "pitchText": "string" }`
-  - Response 201: `{ "id": "uuid", "status": "pending" }`
-  - Validação de taxa de envio (rate limit via Redis) e envio de e-mail de confirmação.
+**Rota**: `/admin` (protegida por variável de ambiente)
 
-- **GET `/api/admin/applications`**
-  - Auth: `role=admin`.
-  - Query params: `status`, `page`, `pageSize`.
-  - Response 200: `{ "data": [ { "id": "uuid", "fullName": "...", "status": "pending", "submittedAt": "ISO" } ], "meta": { "page": 1, "pageSize": 20, "total": 42 } }`
+**Autenticação**: Simples verificação via variável de ambiente (não precisa de sistema de login completo)
 
-- **POST `/api/admin/applications/{id}/decide`**
-  - Request: `{ "decision": "approved" | "rejected", "notes": "string?" }`
-  - Response 200: `{ "id": "uuid", "status": "approved", "reviewedBy": "uuid", "reviewedAt": "ISO" }`
-  - Ação aprovar dispara convite para completar cadastro (link com token).
+**Funcionalidades**:
+- Listar todas as intenções submetidas
+- Filtros por status: pendente, aprovada, rejeitada
+- Ações para cada intenção:
+  - **Aprovar**: gera token único e "convite" no banco
+  - **Rejeitar**: marca como rejeitada com motivo opcional
+- Interface simples e funcional
 
-### 2. Controle de Presença em Reuniões
+### 3. Cadastro Completo
 
-- **POST `/api/meetings`**
-  - Auth: `role=admin`.
-  - Request: `{ "type": "weekly", "title": "string", "scheduledAt": "ISO", "location": "string", "agenda": "string?" }`
-  - Response 201: `{ "id": "uuid", "scheduledAt": "ISO" }`
+**Rota**: `/register/:token` (acessível apenas com token válido)
 
-- **POST `/api/meetings/{id}/attendance`**
-  - Auth: `role=admin` ou `role=member` (para auto check-in dependendo da regra).
-  - Request: `{ "memberId": "uuid", "status": "present" | "absent" | "guest" }`
-  - Response 200: `{ "meetingId": "uuid", "memberId": "uuid", "status": "present", "checkedInAt": "ISO" }`
+**Funcionalidades**:
+- Validação do token de convite
+- Formulário expandido com dados adicionais:
+  - Telefone
+  - Cargo/Posição
+  - Descrição da empresa
+  - LinkedIn (opcional)
+  - Outros campos relevantes
+- Criação do registro completo do membro
+- Invalidação do token após uso
 
-- **GET `/api/meetings/{id}/attendance`**
-  - Response 200: `{ "meetingId": "uuid", "attendees": [ { "memberId": "uuid", "fullName": "string", "status": "present", "checkedInAt": "ISO" }, ... ] }`
+### 4. Fluxo de Notificação
 
-### 3. Sistema de Indicações de Negócios
+**Implementação Simplificada**:
+- Após aprovação: `console.log()` do link de cadastro
+- Na vida real seria envio de email com o link
+- Log deve conter: email do candidato e link completo
 
-- **POST `/api/referrals`**
-  - Auth: `role=member`.
-  - Request: `{ "toMemberId": "uuid", "prospectName": "string", "prospectContact": "string", "description": "string", "valueEstimate": 1200.00 }`
-  - Response 201: `{ "id": "uuid", "status": "sent" }`
+## Modelo de Dados Simplificado
 
-- **PATCH `/api/referrals/{id}`**
-  - Auth: remetente ou admin.
-  - Request: `{ "status": "in_progress" | "closed_won" | "closed_lost", "closedAt": "ISO?", "gratitudeMessage": "string?" }`
-  - Response 200: `{ "id": "uuid", "status": "...", "updatedAt": "ISO" }`
-  - Ao marcar como `closed_won`, opcionalmente cria um registro em `gratitudes`.
+### Tabelas Principais
 
-- **GET `/api/referrals/metrics?period=monthly`**
-  - Resposta 200: `{ "period": "2025-10", "totalSent": 32, "totalWon": 12, "totalValueWon": 58000, "leaders": [ { "memberId": "uuid", "fullName": "string", "wins": 4 } ] }`
+```sql
+-- Intenções de participação
+CREATE TABLE applications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    company VARCHAR(255) NOT NULL,
+    why_participate TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending', -- pending, approved, rejected
+    reviewed_at TIMESTAMP,
+    rejection_reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-## Considerações Adicionais
+-- Tokens de convite
+CREATE TABLE invitation_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    application_id UUID REFERENCES applications(id),
+    token VARCHAR(255) UNIQUE NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-- **Autenticação e Autorização**: JWTs stateless short-lived emitidos pelo módulo de Auth da API NestJS, com refresh tokens rotacionados e armazenados no PostgreSQL. RBAC simples com possibilidade de granularidade futura.
-- **Observabilidade**: Logs estruturados (Pino), métricas Prometheus e tracing (OpenTelemetry) para monitoramento das APIs.
-- **CI/CD**: GitHub Actions com pipelines separados para testes, lint, build e deploy (Vercel para frontend, AWS ECS/Fargate para backend).
-- **Resiliência**: Circuit breakers (opossum) para integrações externas, retentativas exponenciais para filas, migrações gerenciadas via Prisma ou TypeORM.
-- **Segurança**: Sanitização de inputs, proteção contra CSRF para rotas web, criptografia em repouso (KMS) para dados sensíveis.
+-- Membros completos
+CREATE TABLE members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    application_id UUID REFERENCES applications(id),
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    phone VARCHAR(50),
+    company VARCHAR(255) NOT NULL,
+    position VARCHAR(255),
+    company_description TEXT,
+    linkedin_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## API Endpoints
+
+### Public Endpoints
+
+```
+POST /api/applications
+Body: { fullName, email, company, whyParticipate }
+Response: { id, status: "pending" }
+```
+
+### Admin Endpoints
+
+```
+GET /api/admin/applications?status=pending
+Headers: { x-admin-key: process.env.ADMIN_KEY }
+Response: { applications: [...] }
+
+POST /api/admin/applications/:id/approve
+Headers: { x-admin-key: process.env.ADMIN_KEY }
+Response: { token, inviteLink }
+
+POST /api/admin/applications/:id/reject
+Body: { reason? }
+Headers: { x-admin-key: process.env.ADMIN_KEY }
+Response: { status: "rejected" }
+```
+
+### Registration Endpoints
+
+```
+GET /api/invitations/:token
+Response: { valid: boolean, application: {...} }
+
+POST /api/members
+Body: { token, phone, position, companyDescription, linkedinUrl }
+Response: { member: {...} }
+```
+
+## Considerações de Implementação
+
+### Frontend (Next.js)
+
+#### Estrutura de Diretórios
+
+```
+frontend/
+├── app/
+│   ├── layout.tsx                 # Layout principal
+│   ├── page.tsx                   # Página inicial
+│   ├── apply/
+│   │   └── page.tsx              # Formulário de aplicação
+│   ├── admin/
+│   │   └── page.tsx              # Dashboard admin
+│   └── register/
+│       └── [token]/
+│           └── page.tsx          # Cadastro completo
+├── components/
+│   ├── ui/                        # Componentes base
+│   │   ├── Button.tsx
+│   │   ├── Input.tsx
+│   │   ├── Textarea.tsx
+│   │   └── Card.tsx
+│   └── forms/                     # Componentes de formulário
+│       ├── ApplicationForm.tsx
+│       └── MemberRegistrationForm.tsx
+├── lib/
+│   ├── api.ts                     # Cliente API
+│   ├── validations.ts             # Schemas Zod
+│   └── utils.ts                   # Utilitários
+└── types/
+    └── index.ts                   # TypeScript types
+```
+
+#### Validações com Zod
+
+```typescript
+// Exemplo de schema de validação
+const applicationSchema = z.object({
+  fullName: z.string().min(3, "Nome deve ter ao menos 3 caracteres"),
+  email: z.string().email("Email inválido"),
+  company: z.string().min(2, "Nome da empresa obrigatório"),
+  whyParticipate: z.string().min(50, "Por favor, explique com mais detalhes")
+});
+```
+
+#### Cliente API
+
+```typescript
+// Configuração centralizada do Axios
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  headers: { 'Content-Type': 'application/json' }
+});
+
+// Exemplo de função
+export const createApplication = async (data: ApplicationData) => {
+  const response = await api.post('/applications', data);
+  return response.data;
+};
+```
+
+### Backend (NestJS)
+
+#### Estrutura de Diretórios
+
+```
+backend/
+├── src/
+│   ├── main.ts                    # Entry point
+│   ├── app.module.ts              # Módulo raiz
+│   ├── applications/
+│   │   ├── applications.module.ts
+│   │   ├── applications.controller.ts
+│   │   ├── applications.service.ts
+│   │   └── dto/
+│   │       ├── create-application.dto.ts
+│   │       └── update-application.dto.ts
+│   ├── invitations/
+│   │   ├── invitations.module.ts
+│   │   ├── invitations.controller.ts
+│   │   └── invitations.service.ts
+│   ├── members/
+│   │   ├── members.module.ts
+│   │   ├── members.controller.ts
+│   │   ├── members.service.ts
+│   │   └── dto/
+│   │       └── create-member.dto.ts
+│   ├── common/
+│   │   ├── guards/
+│   │   │   └── admin.guard.ts
+│   │   └── filters/
+│   │       └── http-exception.filter.ts
+│   └── prisma/
+│       ├── prisma.module.ts
+│       └── prisma.service.ts
+└── prisma/
+    ├── schema.prisma
+    ├── migrations/
+    └── seed.ts
+```
+
+#### Exemplos de DTOs
+
+```typescript
+// create-application.dto.ts
+export class CreateApplicationDto {
+  @IsString()
+  @MinLength(3)
+  fullName: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(2)
+  company: string;
+
+  @IsString()
+  @MinLength(50)
+  whyParticipate: string;
+}
+```
+
+#### Guard de Autenticação Admin
+
+```typescript
+@Injectable()
+export class AdminGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+    const adminKey = request.headers['x-admin-key'];
+    return adminKey === process.env.ADMIN_KEY;
+  }
+}
+```
+
+### Banco de Dados
+
+#### Schema Prisma Completo
+
+```prisma
+// schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Application {
+  id                String             @id @default(uuid())
+  fullName          String             @map("full_name")
+  email             String             @unique
+  company           String
+  whyParticipate    String             @map("why_participate") @db.Text
+  status            ApplicationStatus  @default(PENDING)
+  reviewedAt        DateTime?          @map("reviewed_at")
+  rejectionReason   String?            @map("rejection_reason") @db.Text
+  createdAt         DateTime           @default(now()) @map("created_at")
+  
+  invitationToken   InvitationToken?
+  member            Member?
+
+  @@map("applications")
+}
+
+model InvitationToken {
+  id            String      @id @default(uuid())
+  applicationId String      @unique @map("application_id")
+  token         String      @unique
+  used          Boolean     @default(false)
+  expiresAt     DateTime    @map("expires_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("invitation_tokens")
+}
+
+model Member {
+  id                   String    @id @default(uuid())
+  applicationId        String    @unique @map("application_id")
+  fullName             String    @map("full_name")
+  email                String    @unique
+  phone                String?
+  company              String
+  position             String?
+  companyDescription   String?   @map("company_description") @db.Text
+  linkedinUrl          String?   @map("linkedin_url")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  
+  application          Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("members")
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+```
+
+#### Comandos Úteis
+
+- **Gerar client**: `npx prisma generate`
+- **Criar migration**: `npx prisma migrate dev --name init`
+- **Abrir Prisma Studio**: `npx prisma studio`
+- **Reset database**: `npx prisma migrate reset`
+
+### Tratamento de Erros
+
+#### Backend
+
+```typescript
+// Filtro global de exceções
+@Catch(HttpException)
+export class HttpExceptionFilter implements ExceptionFilter {
+  catch(exception: HttpException, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse();
+    const status = exception.getStatus();
+    
+    response.status(status).json({
+      statusCode: status,
+      message: exception.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+```
+
+#### Frontend
+
+```typescript
+// Tratamento de erros do Axios
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const message = error.response?.data?.message || 'Erro ao processar requisição';
+    // Exibir toast ou mensagem de erro
+    return Promise.reject(new Error(message));
+  }
+);
+```
+
+### Segurança e Validação
+
+- **Validação dupla**: Client-side (Zod) + Server-side (class-validator)
+- **Sanitização**: Trim de strings e validação de formatos
+- **Rate limiting**: Implementar limite de requisições por IP (opcional)
+- **CORS**: Configurar apenas origens permitidas
+- **Tokens**: Expiração de 7 dias para invitation tokens
+- **Ambiente**: Variáveis sensíveis apenas em .env (nunca no código)
+
+## Status de Implementação
+
+### Módulo Obrigatório: Fluxo de Admissão de Membros
+
+1. **Página de Aplicação** (`/apply`)
+   - Formulário público de intenção
+   - Validação client-side e server-side
+   - Feedback visual de sucesso/erro
+
+2. **Área Administrativa** (`/admin`)
+   - Listagem de applications
+   - Filtros por status (pending, approved, rejected)
+   - Ações de aprovação e rejeição
+   - Geração de links de convite
+
+3. **Cadastro Completo** (`/register/:token`)
+   - Validação de token único
+   - Formulário expandido para membro
+   - Criação de registro completo
+
+4. **API REST Completa**
+   - Endpoints públicos e administrativos
+   - Autenticação via x-admin-key
+   - Validação de dados
+
+5. **Banco de Dados**
+   - PostgreSQL com Prisma ORM
+   - Migrations e schema versionado
+   - Relacionamentos entre entidades
+
+## Funcionalidades Futuras
+
+- Dashboard com métricas
+- Sistema de indicações entre membros
+- Controle de reuniões e presença
+- Módulo financeiro
+- Notificações por email reais
+- Autenticação completa com JWT
