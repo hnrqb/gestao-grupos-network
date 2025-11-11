@@ -133,12 +133,6 @@ export class ApplicationsService {
       },
     });
 
-    console.log('\n❌ ===== APLICAÇÃO REJEITADA =====');
-    console.log(`Email: ${application.email}`);
-    console.log(`Nome: ${application.fullName}`);
-    console.log(`Motivo: ${reason || 'Não especificado'}`);
-    console.log('====================================\n');
-
     return {
       message: 'Aplicação rejeitada',
     };

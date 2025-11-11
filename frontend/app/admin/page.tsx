@@ -22,6 +22,7 @@ export default function AdminPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   useEffect(() => {
     loadApplications();
@@ -56,7 +57,9 @@ export default function AdminPage() {
       setShowSuccessModal(true);
       await loadApplications();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao aprovar aplicação');
+      setToastMessage(error.response?.data?.message || 'Erro ao aprovar aplicação');
+      setToastType('error');
+      setShowToast(true);
     } finally {
       setActionLoading(false);
       setSelectedApp(null);
@@ -66,6 +69,7 @@ export default function AdminPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setToastMessage('Link copiado para área de transferência!');
+    setToastType('success');
     setShowToast(true);
   };
 
@@ -82,10 +86,15 @@ export default function AdminPage() {
       setActionLoading(true);
       await applicationsApi.reject(selectedApp.id, rejectionReason);
       setShowRejectModal(false);
+      setToastMessage('Aplicação rejeitada com sucesso!');
+      setToastType('success');
+      setShowToast(true);
       setSelectedApp(null);
       await loadApplications();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao rejeitar aplicação');
+      setToastMessage(error.response?.data?.message || 'Erro ao rejeitar aplicação');
+      setToastType('error');
+      setShowToast(true);
     } finally {
       setActionLoading(false);
     }
@@ -373,7 +382,7 @@ export default function AdminPage() {
       {/* Toast Notification */}
       <Toast
         message={toastMessage}
-        type="success"
+        type={toastType}
         isVisible={showToast}
         onClose={() => setShowToast(false)}
       />

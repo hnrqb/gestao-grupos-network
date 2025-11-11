@@ -42,13 +42,6 @@ export class MembersService {
     // Mark token as used
     await this.invitationsService.markAsUsed(createMemberDto.token);
 
-    console.log('\n✅ ===== NOVO MEMBRO CADASTRADO =====');
-    console.log(`Nome: ${member.fullName}`);
-    console.log(`Email: ${member.email}`);
-    console.log(`Empresa: ${member.company}`);
-    console.log(`Cargo: ${member.position || 'Não informado'}`);
-    console.log('=====================================\n');
-
     return {
       id: member.id,
       fullName: member.fullName,
