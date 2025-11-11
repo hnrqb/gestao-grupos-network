@@ -5,6 +5,8 @@ import { applicationsApi } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Textarea } from '@/components/ui/Textarea';
+import { Modal } from '@/components/ui/Modal';
+import { Toast } from '@/components/ui/Toast';
 import type { Application } from '@/types';
 
 export default function AdminPage() {
@@ -13,8 +15,13 @@ export default function AdminPage() {
   const [filter, setFilter] = useState<string>('');
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     loadApplications();
@@ -33,19 +40,33 @@ export default function AdminPage() {
     }
   };
 
-  const handleApprove = async (id: string) => {
-    if (!confirm('Deseja aprovar esta aplicação?')) return;
+  const handleApproveClick = (app: Application) => {
+    setSelectedApp(app);
+    setShowApproveModal(true);
+  };
+
+  const handleApproveConfirm = async () => {
+    if (!selectedApp) return;
 
     try {
       setActionLoading(true);
-      const response = await applicationsApi.approve(id);
-      alert(`Aplicação aprovada!\n\nLink de convite: ${response.inviteLink}`);
+      setShowApproveModal(false);
+      const response = await applicationsApi.approve(selectedApp.id);
+      setInviteLink(response.inviteLink);
+      setShowSuccessModal(true);
       await loadApplications();
     } catch (error: any) {
       alert(error.response?.data?.message || 'Erro ao aprovar aplicação');
     } finally {
       setActionLoading(false);
+      setSelectedApp(null);
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setToastMessage('Link copiado para área de transferência!');
+    setShowToast(true);
   };
 
   const handleRejectClick = (app: Application) => {
@@ -199,7 +220,7 @@ export default function AdminPage() {
                       <Button
                         variant="success"
                         size="sm"
-                        onClick={() => handleApprove(app.id)}
+                        onClick={() => handleApproveClick(app)}
                         disabled={actionLoading}
                       >
                         Aprovar
@@ -230,15 +251,95 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* Approve Confirmation Modal */}
+      <Modal
+        isOpen={showApproveModal}
+        onClose={() => setShowApproveModal(false)}
+        title="Aprovar Aplicação"
+        showCancel={true}
+        confirmText="Aprovar"
+        confirmVariant="success"
+        onConfirm={handleApproveConfirm}
+      >
+        <p className="text-gray-700">
+          Deseja aprovar a aplicação de{' '}
+          <strong className="text-gray-900">{selectedApp?.fullName}</strong>?
+        </p>
+        <p className="text-sm text-gray-500 mt-2">
+          Um link de convite será gerado e exibido após a aprovação.
+        </p>
+      </Modal>
+
+      {/* Success Modal with Invite Link */}
+      <Modal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          setInviteLink('');
+        }}
+        title="Aplicação Aprovada!"
+        confirmText="Fechar"
+        confirmVariant="success"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-green-600">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <p className="font-semibold">Candidato aprovado com sucesso!</p>
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-blue-900 mb-2">
+              Link de Convite:
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inviteLink}
+                readOnly
+                className="flex-1 px-3 py-2 bg-white border border-blue-300 rounded text-sm text-gray-900 font-mono"
+              />
+              <Button
+                size="sm"
+                onClick={() => copyToClipboard(inviteLink)}
+              >
+                Copiar
+              </Button>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full mt-3"
+              onClick={() => window.open(inviteLink, '_blank')}
+            >
+              Abrir Link
+            </Button>
+          </div>
+          
+          <p className="text-xs text-gray-500">
+            💡 Envie este link para o candidato completar o cadastro
+          </p>
+        </div>
+      </Modal>
+
       {/* Reject Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div 
+          className="fixed inset-0 flex items-center justify-center p-4 z-50 animate-fade-in"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+          onClick={() => setShowRejectModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+            style={{ backgroundColor: '#ffffff' }}
+          >
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
               Rejeitar Aplicação
             </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Candidato: <strong>{selectedApp?.fullName}</strong>
+            <p className="text-sm text-gray-700 mb-4">
+              Candidato: <strong className="text-gray-900">{selectedApp?.fullName}</strong>
             </p>
             <Textarea
               label="Motivo da rejeição (opcional)"
@@ -268,6 +369,14 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      <Toast
+        message={toastMessage}
+        type="success"
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+      />
     </div>
   );
 }

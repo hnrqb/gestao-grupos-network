@@ -21,10 +21,10 @@ export type ApplicationFormData = z.infer<typeof applicationSchema>;
 
 // Member registration validation
 export const memberSchema = z.object({
-  token: z.string(),
-  phone: z.string().optional(),
-  position: z.string().optional(),
-  companyDescription: z.string().max(500, 'Descrição muito longa').optional(),
+  token: z.string().min(1, 'Token é obrigatório'),
+  phone: z.string().optional().or(z.literal('')),
+  position: z.string().optional().or(z.literal('')),
+  companyDescription: z.string().max(500, 'Descrição muito longa').optional().or(z.literal('')),
   linkedinUrl: z.string().url('URL inválida').optional().or(z.literal('')),
 });
 

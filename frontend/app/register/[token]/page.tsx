@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Card } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
 import type { InvitationValidation } from '@/types';
 
 export default function RegisterPage() {
@@ -22,6 +23,8 @@ export default function RegisterPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const {
     register,
@@ -56,14 +59,24 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      await membersApi.create(data);
+      // Remove empty optional fields
+      const cleanData = {
+        token: data.token,
+        ...(data.phone && { phone: data.phone }),
+        ...(data.position && { position: data.position }),
+        ...(data.companyDescription && { companyDescription: data.companyDescription }),
+        ...(data.linkedinUrl && { linkedinUrl: data.linkedinUrl }),
+      };
+
+      await membersApi.create(cleanData);
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error: any) {
-      alert(
+      setErrorMessage(
         error.response?.data?.message ||
           'Erro ao completar cadastro. Tente novamente.'
       );
+      setShowErrorModal(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -223,6 +236,17 @@ export default function RegisterPage() {
           </form>
         </Card>
       </div>
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Erro ao Cadastrar"
+        confirmText="OK"
+        confirmVariant="danger"
+      >
+        <p className="text-gray-700">{errorMessage}</p>
+      </Modal>
     </div>
   );
 }
