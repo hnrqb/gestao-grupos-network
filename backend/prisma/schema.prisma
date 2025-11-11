@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Application {
+  id                String             @id @default(uuid())
+  fullName          String             @map("full_name")
+  email             String             @unique
+  company           String
+  whyParticipate    String             @map("why_participate") @db.Text
+  status            ApplicationStatus  @default(PENDING)
+  reviewedAt        DateTime?          @map("reviewed_at")
+  rejectionReason   String?            @map("rejection_reason") @db.Text
+  createdAt         DateTime           @default(now()) @map("created_at")
+  
+  invitationToken   InvitationToken?
+  member            Member?
+
+  @@map("applications")
+}
+
+model InvitationToken {
+  id            String      @id @default(uuid())
+  applicationId String      @unique @map("application_id")
+  token         String      @unique
+  used          Boolean     @default(false)
+  expiresAt     DateTime    @map("expires_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("invitation_tokens")
+}
+
+model Member {
+  id                   String    @id @default(uuid())
+  applicationId        String    @unique @map("application_id")
+  fullName             String    @map("full_name")
+  email                String    @unique
+  phone                String?
+  company              String
+  position             String?
+  companyDescription   String?   @map("company_description") @db.Text
+  linkedinUrl          String?   @map("linkedin_url")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  
+  application          Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("members")
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
