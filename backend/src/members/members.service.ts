@@ -2,12 +2,14 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { InvitationsService } from '../invitations/invitations.service';
 import { CreateMemberDto } from './dto/create-member.dto';
+import { MemberAuthService } from '../auth/member-auth.service';
 
 @Injectable()
 export class MembersService {
   constructor(
     private prisma: PrismaService,
     private invitationsService: InvitationsService,
+    private memberAuthService: MemberAuthService,
   ) {}
 
   async create(createMemberDto: CreateMemberDto) {
@@ -26,6 +28,9 @@ export class MembersService {
     }
 
     // Create member
+    const authSecret = this.memberAuthService.generateSecret();
+    const authSecretHash = this.memberAuthService.hashSecret(authSecret);
+
     const member = await this.prisma.member.create({
       data: {
         applicationId: application.id,
@@ -36,17 +41,26 @@ export class MembersService {
         position: createMemberDto.position,
         companyDescription: createMemberDto.companyDescription,
         linkedinUrl: createMemberDto.linkedinUrl,
+        authSecretHash,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        company: true,
       },
     });
 
     // Mark token as used
     await this.invitationsService.markAsUsed(createMemberDto.token);
 
+    const token = this.memberAuthService.generateToken(member);
+
     return {
-      id: member.id,
-      fullName: member.fullName,
-      email: member.email,
       message: 'Cadastro realizado com sucesso!',
+      member,
+      token,
+      authSecret,
     };
   }
 

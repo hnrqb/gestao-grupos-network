@@ -11,7 +11,10 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Card } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
-import type { InvitationValidation } from '@/types';
+import type {
+  InvitationValidation,
+  MemberRegistrationResponse,
+} from '@/types';
 
 export default function RegisterPage() {
   const params = useParams();
@@ -23,6 +26,7 @@ export default function RegisterPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [authData, setAuthData] = useState<MemberRegistrationResponse | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -68,7 +72,17 @@ export default function RegisterPage() {
         ...(data.linkedinUrl && { linkedinUrl: data.linkedinUrl }),
       };
 
-      await membersApi.create(cleanData);
+      const response = await membersApi.create(cleanData);
+      setAuthData(response);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(
+          'memberAuth',
+          JSON.stringify({
+            member: response.member,
+            token: response.token,
+          }),
+        );
+      }
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error: any) {
@@ -158,9 +172,48 @@ export default function RegisterPage() {
                 Bem-vindo ao grupo! Seu cadastro foi realizado com sucesso.
                 Em breve você receberá mais informações sobre as próximas etapas.
               </p>
-              <Button onClick={() => router.push('/')}>
-                Ir para Home
-              </Button>
+
+              {authData && (
+                <div className="text-left bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                    Dados de acesso ao painel de membros
+                  </h3>
+                  <p className="text-sm text-blue-800 mb-2">
+                    <strong>Seu código secreto:</strong>
+                  </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+                    <code className="flex-1 bg-white border border-blue-200 rounded px-3 py-2 text-blue-900 text-sm break-all">
+                      {authData.authSecret}
+                    </code>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        navigator.clipboard.writeText(authData.authSecret)
+                      }
+                    >
+                      Copiar código
+                    </Button>
+                  </div>
+                  <p className="text-xs text-blue-700">
+                    Guarde este código em local seguro. Você vai precisar dele,
+                    junto com seu e-mail, para acessar o sistema de indicações.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row sm:justify-center sm:items-center gap-3">
+                <Button onClick={() => router.push('/')}>
+                  Ir para Home
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => router.push('/members/indications')}
+                >
+                  Acessar sistema de indicações
+                </Button>
+              </div>
             </div>
           </Card>
         </div>

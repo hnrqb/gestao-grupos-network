@@ -6,6 +6,7 @@ import { ApplicationsModule } from './applications/applications.module';
 import { InvitationsModule } from './invitations/invitations.module';
 import { MembersModule } from './members/members.module';
 import { IndicationsModule } from './indications/indications.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { IndicationsModule } from './indications/indications.module';
     InvitationsModule,
     MembersModule,
     IndicationsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

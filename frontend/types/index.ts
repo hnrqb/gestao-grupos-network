@@ -42,6 +42,18 @@ export interface MemberSummary {
   company: string;
 }
 
+export interface MemberAuthData {
+  member: MemberSummary;
+  token: string;
+}
+
+export interface MemberRegistrationResponse extends MemberAuthData {
+  message: string;
+  authSecret: string;
+}
+
+export interface MemberLoginResponse extends MemberAuthData {}
+
 export interface Indication {
   id: string;
   contactInfo: string;

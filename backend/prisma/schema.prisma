@@ -52,6 +52,7 @@ model Member {
   linkedinUrl          String?   @map("linkedin_url")
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
+  authSecretHash       String?   @map("auth_secret")
   sentIndications      Indication[] @relation("sent_indications")
   receivedIndications  Indication[] @relation("received_indications")
   

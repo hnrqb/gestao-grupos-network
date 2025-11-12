@@ -1,4 +1,8 @@
 import axios from 'axios';
+import type {
+  MemberAuthData,
+  MemberRegistrationResponse,
+} from '@/types';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
@@ -75,7 +79,7 @@ export const membersApi = {
     linkedinUrl?: string;
   }) => {
     const response = await api.post('/members', data);
-    return response.data;
+    return response.data as MemberRegistrationResponse;
   },
 
   getAll: async () => {
@@ -87,29 +91,34 @@ export const membersApi = {
     const response = await api.get('/members/directory');
     return response.data;
   },
+
+  login: async (data: { email: string; secret: string }) => {
+    const response = await api.post('/members/auth/login', data);
+    return response.data as MemberAuthData;
+  },
 };
 
 // Indications API
 export const indicationsApi = {
   create: async (
-    memberId: string,
+    token: string,
     data: { targetMemberId: string; contactInfo: string; description: string },
   ) => {
     const response = await api.post('/indications', data, {
-      headers: { 'x-member-id': memberId },
+      headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
   },
 
-  getAll: async (memberId: string) => {
+  getAll: async (token: string) => {
     const response = await api.get('/indications', {
-      headers: { 'x-member-id': memberId },
+      headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
   },
 
   updateStatus: async (
-    memberId: string,
+    token: string,
     indicationId: string,
     status: string,
   ) => {
@@ -117,7 +126,7 @@ export const indicationsApi = {
       `/indications/${indicationId}/status`,
       { status },
       {
-        headers: { 'x-member-id': memberId },
+        headers: { Authorization: `Bearer ${token}` },
       },
     );
     return response.data;

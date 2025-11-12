@@ -8,14 +8,14 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-  import { IndicationsService } from './indications.service';
-import { MemberGuard } from '../common/guards/member.guard';
+import { IndicationsService } from './indications.service';
+import { MemberJwtGuard } from '../common/guards/member-jwt.guard';
 import { CreateIndicationDto } from './dto/create-indication.dto';
 import { UpdateIndicationStatusDto } from './dto/update-indication-status.dto';
 import type { Request } from 'express';
 
 @Controller('indications')
-@UseGuards(MemberGuard)
+@UseGuards(MemberJwtGuard)
 export class IndicationsController {
   constructor(private readonly indicationsService: IndicationsService) {}
 

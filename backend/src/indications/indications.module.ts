@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { IndicationsController } from './indications.controller';
 import { IndicationsService } from './indications.service';
-import { MemberGuard } from '../common/guards/member.guard';
+import { MemberJwtGuard } from '../common/guards/member-jwt.guard';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
+  imports: [AuthModule],
   controllers: [IndicationsController],
-  providers: [IndicationsService, MemberGuard],
+  providers: [IndicationsService, MemberJwtGuard],
 })
 export class IndicationsModule {}
 
