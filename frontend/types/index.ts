@@ -70,3 +70,14 @@ export interface IndicationList {
   received: Indication[];
 }
 
+export interface DashboardMetric {
+  value: number;
+  isMock: boolean;
+}
+
+export interface PerformanceDashboard {
+  activeMembers: DashboardMetric;
+  indicationsThisMonth: DashboardMetric;
+  thankYousThisMonth: DashboardMetric;
+  generatedAt: string;
+}

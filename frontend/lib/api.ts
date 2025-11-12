@@ -2,6 +2,7 @@ import axios from 'axios';
 import type {
   MemberAuthData,
   MemberRegistrationResponse,
+  PerformanceDashboard,
 } from '@/types';
 
 const api = axios.create({
@@ -130,6 +131,14 @@ export const indicationsApi = {
       },
     );
     return response.data;
+  },
+};
+
+// Dashboard API
+export const dashboardApi = {
+  getPerformance: async () => {
+    const response = await api.get('/admin/dashboard');
+    return response.data as PerformanceDashboard;
   },
 };
 

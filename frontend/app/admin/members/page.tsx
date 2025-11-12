@@ -94,22 +94,22 @@ export default function MembersAdminPage() {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="secondary"
+              size="sm"
+              onClick={() => window.location.assign('/admin')}
+            >
+              ← Voltar
+            </Button>
+            <Button
+              variant="primary"
               size="sm"
               onClick={handleRefresh}
               isLoading={isRefreshing}
               disabled={loading || isRefreshing}
             >
-              Recarregar
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => window.location.assign('/admin')}
-            >
-              Voltar para Admin
+              Recarregar lista
             </Button>
           </div>
         </div>

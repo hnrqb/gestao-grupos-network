@@ -151,6 +151,13 @@ export default function AdminPage() {
             <Button
               variant="secondary"
               size="sm"
+              onClick={() => window.location.assign('/admin/dashboard')}
+            >
+              Dashboard de performance
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => window.location.assign('/admin/members')}
             >
               Ver membros cadastrados
