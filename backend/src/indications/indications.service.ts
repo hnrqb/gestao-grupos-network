@@ -92,10 +92,12 @@ export class IndicationsService {
       throw new NotFoundException('Indicação não encontrada');
     }
 
-    if (
-      indication.fromMemberId !== memberId &&
-      indication.toMemberId !== memberId
-    ) {
+    if (indication.toMemberId !== memberId) {
+      if (indication.fromMemberId === memberId) {
+        throw new ForbiddenException(
+          'Somente o membro que recebeu a indicação pode alterar o status',
+        );
+      }
       throw new ForbiddenException('Você não tem acesso a esta indicação');
     }
 

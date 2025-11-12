@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { applicationsApi } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -24,11 +24,7 @@ export default function AdminPage() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
-  useEffect(() => {
-    loadApplications();
-  }, [filter]);
-
-  const loadApplications = async () => {
+  const loadApplications = useCallback(async () => {
     try {
       setLoading(true);
       const data = await applicationsApi.getAll(filter || undefined);
@@ -40,10 +36,22 @@ export default function AdminPage() {
       setShowToast(true);
       setLoading(false);
       setTimeout(() => {
-        window.location.href = '/';  
+        window.location.href = '/';
       }, 2000);
     } finally {
       setLoading(false);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    loadApplications();
+  }, [loadApplications]);
+
+  const handleFilterClick = (value: string) => {
+    if (value === filter) {
+      loadApplications();
+    } else {
+      setFilter(value);
     }
   };
 
@@ -119,9 +127,8 @@ export default function AdminPage() {
     };
     return (
       <span
-        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-          badges[status as keyof typeof badges]
-        }`}
+        className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[status as keyof typeof badges]
+          }`}
       >
         {labels[status as keyof typeof labels]}
       </span>
@@ -144,13 +151,6 @@ export default function AdminPage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => window.location.assign('/members/indications')}
-            >
-              Sistema de indicações
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
               onClick={() => window.location.assign('/admin/members')}
             >
               Ver membros cadastrados
@@ -158,32 +158,32 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="mb-6 flex flex-wrap gap-2 items-center">
           <Button
             variant={filter === '' ? 'primary' : 'secondary'}
             size="sm"
-            onClick={() => setFilter('')}
+            onClick={() => handleFilterClick('')}
           >
             Todas
           </Button>
           <Button
             variant={filter === 'PENDING' ? 'primary' : 'secondary'}
             size="sm"
-            onClick={() => setFilter('PENDING')}
+            onClick={() => handleFilterClick('PENDING')}
           >
             Pendentes
           </Button>
           <Button
             variant={filter === 'APPROVED' ? 'primary' : 'secondary'}
             size="sm"
-            onClick={() => setFilter('APPROVED')}
+            onClick={() => handleFilterClick('APPROVED')}
           >
             Aprovadas
           </Button>
           <Button
             variant={filter === 'REJECTED' ? 'primary' : 'secondary'}
             size="sm"
-            onClick={() => setFilter('REJECTED')}
+            onClick={() => handleFilterClick('REJECTED')}
           >
             Rejeitadas
           </Button>
@@ -321,7 +321,7 @@ export default function AdminPage() {
             </svg>
             <p className="font-semibold">Candidato aprovado com sucesso!</p>
           </div>
-          
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm font-medium text-blue-900 mb-2">
               Link de Convite:
@@ -349,7 +349,7 @@ export default function AdminPage() {
               Abrir Link
             </Button>
           </div>
-          
+
           <p className="text-xs text-gray-500">
             💡 Envie este link para o candidato completar o cadastro
           </p>
@@ -358,12 +358,12 @@ export default function AdminPage() {
 
       {/* Reject Modal */}
       {showRejectModal && (
-        <div 
+        <div
           className="fixed inset-0 flex items-center justify-center p-4 z-50 animate-fade-in"
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
           onClick={() => setShowRejectModal(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full animate-scale-in"
             onClick={(e) => e.stopPropagation()}
             style={{ backgroundColor: '#ffffff' }}

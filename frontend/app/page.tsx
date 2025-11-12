@@ -23,6 +23,12 @@ export default function Home() {
             </Button>
           </Link>
           
+          <Link href="/members/indications">
+            <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+              Sistema de Indicações
+            </Button>
+          </Link>
+
           <Link href="/admin">
             <Button variant="secondary" size="lg" className="w-full sm:w-auto">
               Área Administrativa

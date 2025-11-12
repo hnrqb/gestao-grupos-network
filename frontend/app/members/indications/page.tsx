@@ -585,28 +585,34 @@ function IndicationCard({
             Criada em{' '}
             {new Date(indication.createdAt).toLocaleString('pt-BR')}
           </p>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-700">
-              Atualizar status:
-            </label>
-            <select
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={indication.status}
-              onChange={(event) =>
-                onStatusChange(
-                  indication,
-                  event.target.value as IndicationStatus,
-                )
-              }
-              disabled={updating}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {isOwner ? (
+            <p className="text-xs text-gray-500">
+              Apenas o membro indicado pode atualizar o status.
+            </p>
+          ) : (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-700">
+                Atualizar status:
+              </label>
+              <select
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={indication.status}
+                onChange={(event) =>
+                  onStatusChange(
+                    indication,
+                    event.target.value as IndicationStatus,
+                  )
+                }
+                disabled={updating}
+              >
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
     </Card>
