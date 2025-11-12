@@ -62,6 +62,7 @@ export class MembersService {
         phone: true,
         linkedinUrl: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
   }
@@ -79,5 +80,17 @@ export class MembersService {
     }
 
     return member;
+  }
+
+  async getDirectory() {
+    return this.prisma.member.findMany({
+      orderBy: { fullName: 'asc' },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        company: true,
+      },
+    });
   }
 }

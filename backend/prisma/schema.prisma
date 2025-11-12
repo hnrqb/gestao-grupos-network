@@ -41,7 +41,7 @@ model InvitationToken {
 }
 
 model Member {
-  id                   String    @id @default(uuid())
+  id                   String    @id @default(uuid()) @db.Text
   applicationId        String    @unique @map("application_id")
   fullName             String    @map("full_name")
   email                String    @unique
@@ -51,14 +51,40 @@ model Member {
   companyDescription   String?   @map("company_description") @db.Text
   linkedinUrl          String?   @map("linkedin_url")
   createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  sentIndications      Indication[] @relation("sent_indications")
+  receivedIndications  Indication[] @relation("received_indications")
   
   application          Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("members")
 }
 
+model Indication {
+  id              String            @id @default(uuid()) @db.Text
+  fromMemberId    String            @map("from_member_id")
+  toMemberId      String            @map("to_member_id")
+  contactInfo     String            @map("contact_info") @db.Text
+  description     String            @db.Text
+  status          IndicationStatus  @default(NEW)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  fromMember      Member            @relation("sent_indications", fields: [fromMemberId], references: [id], onDelete: Cascade)
+  toMember        Member            @relation("received_indications", fields: [toMemberId], references: [id], onDelete: Cascade)
+
+  @@map("indications")
+}
+
 enum ApplicationStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum IndicationStatus {
+  NEW
+  IN_CONTACT
+  CLOSED
+  DECLINED
 }

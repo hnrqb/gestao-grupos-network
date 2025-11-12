@@ -82,6 +82,46 @@ export const membersApi = {
     const response = await api.get('/members');
     return response.data;
   },
+
+  getDirectory: async () => {
+    const response = await api.get('/members/directory');
+    return response.data;
+  },
+};
+
+// Indications API
+export const indicationsApi = {
+  create: async (
+    memberId: string,
+    data: { targetMemberId: string; contactInfo: string; description: string },
+  ) => {
+    const response = await api.post('/indications', data, {
+      headers: { 'x-member-id': memberId },
+    });
+    return response.data;
+  },
+
+  getAll: async (memberId: string) => {
+    const response = await api.get('/indications', {
+      headers: { 'x-member-id': memberId },
+    });
+    return response.data;
+  },
+
+  updateStatus: async (
+    memberId: string,
+    indicationId: string,
+    status: string,
+  ) => {
+    const response = await api.patch(
+      `/indications/${indicationId}/status`,
+      { status },
+      {
+        headers: { 'x-member-id': memberId },
+      },
+    );
+    return response.data;
+  },
 };
 
 export default api;

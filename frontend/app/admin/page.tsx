@@ -35,7 +35,13 @@ export default function AdminPage() {
       setApplications(data);
     } catch (error) {
       console.error('Error loading applications:', error);
-      alert('Erro ao carregar aplicações');
+      setToastMessage('Chave de administração inválida');
+      setToastType('error');
+      setShowToast(true);
+      setLoading(false);
+      setTimeout(() => {
+        window.location.href = '/';  
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -125,13 +131,31 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Área Administrativa
-          </h1>
-          <p className="text-gray-600">
-            Gerencie aplicações de candidatos ao grupo
-          </p>
+        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Área Administrativa
+            </h1>
+            <p className="text-gray-600">
+              Gerencie aplicações de candidatos ao grupo
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => window.location.assign('/members/indications')}
+            >
+              Sistema de indicações
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => window.location.assign('/admin/members')}
+            >
+              Ver membros cadastrados
+            </Button>
+          </div>
         </div>
 
         <div className="mb-6 flex flex-wrap gap-2">

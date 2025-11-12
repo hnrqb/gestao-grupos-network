@@ -28,6 +28,11 @@ export class MembersController {
     return this.membersService.findAll();
   }
 
+  @Get('directory')
+  getDirectory() {
+    return this.membersService.getDirectory();
+  }
+
   @Get(':id')
   @UseGuards(AdminGuard)
   findOne(@Param('id') id: string) {
