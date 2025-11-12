@@ -9,6 +9,10 @@ declare module 'express-serve-static-core' {
       company: string;
     };
     memberToken?: string;
+    admin?: {
+      sub: string;
+      type: 'admin';
+    };
   }
 }
 

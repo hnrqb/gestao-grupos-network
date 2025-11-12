@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
 import type { Member } from '@/types';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 export default function MembersAdminPage() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -16,6 +17,7 @@ export default function MembersAdminPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const { logout } = useAdminAuth();
 
   useEffect(() => {
     loadMembers();
@@ -26,11 +28,15 @@ export default function MembersAdminPage() {
       setLoading(true);
       const data = await membersApi.getAll();
       setMembers(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar membros:', error);
-      setToastMessage('Não foi possível carregar os membros cadastrados.');
-      setToastType('error');
-      setShowToast(true);
+      if (error?.response?.status === 401) {
+        logout();
+      } else {
+        setToastMessage('Não foi possível carregar os membros cadastrados.');
+        setToastType('error');
+        setShowToast(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -44,11 +50,15 @@ export default function MembersAdminPage() {
       setToastMessage('Lista de membros atualizada com sucesso.');
       setToastType('success');
       setShowToast(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao atualizar lista de membros:', error);
-      setToastMessage('Não foi possível atualizar a lista de membros.');
-      setToastType('error');
-      setShowToast(true);
+      if (error?.response?.status === 401) {
+        logout();
+      } else {
+        setToastMessage('Não foi possível atualizar a lista de membros.');
+        setToastType('error');
+        setShowToast(true);
+      }
     } finally {
       setIsRefreshing(false);
     }
@@ -110,6 +120,9 @@ export default function MembersAdminPage() {
               disabled={loading || isRefreshing}
             >
               Recarregar lista
+            </Button>
+            <Button variant="danger" size="sm" onClick={logout}>
+              Sair
             </Button>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Toast } from '@/components/ui/Toast';
 import type { PerformanceDashboard } from '@/types';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 interface MetricDisplay {
   id: string;
@@ -22,6 +23,7 @@ export default function PerformanceDashboardPage() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
   const [showToast, setShowToast] = useState(false);
+  const { logout } = useAdminAuth();
 
   const showToastMessage = useCallback(
     (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -45,9 +47,13 @@ export default function PerformanceDashboardPage() {
         if (showSuccess) {
           showToastMessage('Dashboard atualizado com sucesso!', 'success');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erro ao carregar dashboard de performance:', error);
-        showToastMessage('Não foi possível carregar os indicadores.', 'error');
+        if (error?.response?.status === 401) {
+          logout();
+        } else {
+          showToastMessage('Não foi possível carregar os indicadores.', 'error');
+        }
       } finally {
         if (isReload) {
           setReloading(false);
@@ -130,6 +136,9 @@ export default function PerformanceDashboardPage() {
               isLoading={reloading}
             >
               Recarregar indicadores
+            </Button>
+            <Button variant="danger" size="sm" onClick={logout}>
+              Sair
             </Button>
           </div>
         </div>

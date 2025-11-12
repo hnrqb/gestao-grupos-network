@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Modal } from '@/components/ui/Modal';
 import { Toast } from '@/components/ui/Toast';
 import type { Application } from '@/types';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 export default function AdminPage() {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -23,21 +24,22 @@ export default function AdminPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const { logout } = useAdminAuth();
 
   const loadApplications = useCallback(async () => {
     try {
       setLoading(true);
       const data = await applicationsApi.getAll(filter || undefined);
       setApplications(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading applications:', error);
-      setToastMessage('Chave de administração inválida');
-      setToastType('error');
-      setShowToast(true);
-      setLoading(false);
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
+      if (error?.response?.status === 401) {
+        logout();
+      } else {
+        setToastMessage('Não foi possível carregar as aplicações.');
+        setToastType('error');
+        setShowToast(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -161,6 +163,9 @@ export default function AdminPage() {
               onClick={() => window.location.assign('/admin/members')}
             >
               Ver membros cadastrados
+            </Button>
+            <Button variant="danger" size="sm" onClick={logout}>
+              Sair
             </Button>
           </div>
         </div>

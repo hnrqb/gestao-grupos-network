@@ -4,6 +4,11 @@ import type {
   MemberRegistrationResponse,
   PerformanceDashboard,
 } from '@/types';
+import {
+  clearAdminAuth,
+  loadAdminAuth,
+  notifyAdminAuthLogout,
+} from './admin-auth';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
@@ -12,13 +17,20 @@ const api = axios.create({
   },
 });
 
-// Request interceptor for adding admin key when needed
+// Request interceptor para incluir o token de administrador quando disponível
 api.interceptors.request.use((config) => {
-  // Add admin key from env or localStorage if needed
-  const adminKey = process.env.NEXT_PUBLIC_ADMIN_KEY;
-  if (adminKey && config.headers) {
-    config.headers['x-admin-key'] = adminKey;
+  if (config.headers) {
+    const alreadyAuthorized =
+      config.headers.Authorization || config.headers.authorization;
+
+    if (!alreadyAuthorized) {
+      const adminAuth = loadAdminAuth();
+      if (adminAuth?.token) {
+        config.headers.Authorization = `Bearer ${adminAuth.token}`;
+      }
+    }
   }
+
   return config;
 });
 
@@ -26,6 +38,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 401) {
+      const adminAuth = loadAdminAuth();
+      if (adminAuth) {
+        clearAdminAuth();
+        notifyAdminAuthLogout();
+      }
+    }
+
     const message =
       error.response?.data?.message || 'Erro ao processar requisição';
     console.error('API Error:', message);
@@ -139,6 +159,14 @@ export const dashboardApi = {
   getPerformance: async () => {
     const response = await api.get('/admin/dashboard');
     return response.data as PerformanceDashboard;
+  },
+};
+
+// Admin Auth API
+export const adminAuthApi = {
+  login: async (data: { key: string }) => {
+    const response = await api.post('/admin/auth/login', data);
+    return response.data as { token: string; expiresIn: number };
   },
 };
 
