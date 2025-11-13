@@ -1,20 +1,21 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UseGuards,
   HttpCode,
   HttpStatus,
+  Param,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
+import { ApplicationStatus } from '@prisma/client';
 import { ApplicationsService } from './applications.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { AdminGuard } from '../common/guards/admin.guard';
-import { ApplicationStatus } from './dto/update-application.dto';
 
-@Controller('applications')
+@Controller({ path: 'applications', version: '1' })
 export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
 
@@ -26,8 +27,9 @@ export class ApplicationsController {
 
   @Get()
   @UseGuards(AdminGuard)
-  findAll(@Query('status') status?: ApplicationStatus) {
-    return this.applicationsService.findAll(status);
+  findAll(@Query('status') status?: string) {
+    const parsedStatus = this.parseStatus(status);
+    return this.applicationsService.findAll(parsedStatus);
   }
 
   @Get(':id')
@@ -46,10 +48,21 @@ export class ApplicationsController {
   @Post(':id/reject')
   @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.OK)
-  reject(
-    @Param('id') id: string,
-    @Body('reason') reason?: string,
-  ) {
+  reject(@Param('id') id: string, @Body('reason') reason?: string) {
     return this.applicationsService.reject(id, reason);
+  }
+
+  private parseStatus(value?: string): ApplicationStatus | undefined {
+    if (!value) {
+      return undefined;
+    }
+
+    const normalized = value.toUpperCase() as ApplicationStatus;
+    const validStatuses = Object.values(ApplicationStatus) as string[];
+    if (!validStatuses.includes(normalized)) {
+      throw new BadRequestException('Status de aplicação inválido.');
+    }
+
+    return normalized;
   }
 }

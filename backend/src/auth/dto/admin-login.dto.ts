@@ -5,5 +5,3 @@ export class AdminLoginDto {
   @MinLength(1, { message: 'A chave administrativa é obrigatória' })
   key!: string;
 }
-
-

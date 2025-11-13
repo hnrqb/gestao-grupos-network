@@ -48,7 +48,6 @@ export default function PerformanceDashboardPage() {
           showToastMessage('Dashboard atualizado com sucesso!', 'success');
         }
       } catch (error: any) {
-        console.error('Erro ao carregar dashboard de performance:', error);
         if (error?.response?.status === 401) {
           logout();
         } else {

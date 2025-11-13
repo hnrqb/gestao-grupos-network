@@ -32,7 +32,6 @@ export default function AdminPage() {
       const data = await applicationsApi.getAll(filter || undefined);
       setApplications(data);
     } catch (error: any) {
-      console.error('Error loading applications:', error);
       if (error?.response?.status === 401) {
         logout();
       } else {
@@ -43,7 +42,7 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, logout]);
 
   useEffect(() => {
     loadApplications();

@@ -12,7 +12,7 @@ import { MembersService } from './members.service';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { AdminGuard } from '../common/guards/admin.guard';
 
-@Controller('members')
+@Controller({ path: 'members', version: '1' })
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 

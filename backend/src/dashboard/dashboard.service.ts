@@ -19,7 +19,9 @@ export class DashboardService {
 
   async getPerformanceMetrics(): Promise<PerformanceDashboard> {
     const now = new Date();
-    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const startOfMonth = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
 
     const [activeMembers, indicationsThisMonth] = await Promise.all([
       this.prisma.member.count(),
@@ -32,8 +34,6 @@ export class DashboardService {
       }),
     ]);
 
-    // Ainda não há recurso de "obrigados" na plataforma.
-    // Mantemos um valor mockado enquanto a funcionalidade não é implementada.
     const thankYousThisMonth = 0;
 
     return {
@@ -53,5 +53,3 @@ export class DashboardService {
     };
   }
 }
-
-

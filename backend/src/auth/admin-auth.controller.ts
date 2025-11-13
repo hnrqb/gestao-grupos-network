@@ -3,7 +3,7 @@ import { AdminAuthService } from './admin-auth.service';
 import type { AdminAuthResponse } from './admin-auth.service';
 import { AdminLoginDto } from './dto/admin-login.dto';
 
-@Controller('admin/auth')
+@Controller({ path: 'admin/auth', version: '1' })
 export class AdminAuthController {
   constructor(private readonly adminAuthService: AdminAuthService) {}
 
@@ -12,5 +12,3 @@ export class AdminAuthController {
     return this.adminAuthService.login(adminLoginDto.key);
   }
 }
-
-

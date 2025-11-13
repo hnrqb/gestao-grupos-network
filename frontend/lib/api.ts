@@ -11,13 +11,13 @@ import {
 } from './admin-auth';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  baseURL:
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor para incluir o token de administrador quando disponível
 api.interceptors.request.use((config) => {
   if (config.headers) {
     const alreadyAuthorized =
@@ -34,7 +34,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -46,14 +45,12 @@ api.interceptors.response.use(
       }
     }
 
-    const message =
+    (error as Record<string, unknown>).friendlyMessage =
       error.response?.data?.message || 'Erro ao processar requisição';
-    console.error('API Error:', message);
     return Promise.reject(error);
-  }
+  },
 );
 
-// Applications API
 export const applicationsApi = {
   create: async (data: {
     fullName: string;
@@ -82,7 +79,6 @@ export const applicationsApi = {
   },
 };
 
-// Invitations API
 export const invitationsApi = {
   validate: async (token: string) => {
     const response = await api.get(`/invitations/${token}`);
@@ -90,7 +86,6 @@ export const invitationsApi = {
   },
 };
 
-// Members API
 export const membersApi = {
   create: async (data: {
     token: string;
@@ -119,7 +114,6 @@ export const membersApi = {
   },
 };
 
-// Indications API
 export const indicationsApi = {
   create: async (
     token: string,
@@ -154,7 +148,6 @@ export const indicationsApi = {
   },
 };
 
-// Dashboard API
 export const dashboardApi = {
   getPerformance: async () => {
     const response = await api.get('/admin/dashboard');
@@ -162,7 +155,6 @@ export const dashboardApi = {
   },
 };
 
-// Admin Auth API
 export const adminAuthApi = {
   login: async (data: { key: string }) => {
     const response = await api.post('/admin/auth/login', data);

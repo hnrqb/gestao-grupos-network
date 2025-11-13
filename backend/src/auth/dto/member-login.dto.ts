@@ -8,5 +8,3 @@ export class MemberLoginDto {
   @IsNotEmpty()
   secret: string;
 }
-
-

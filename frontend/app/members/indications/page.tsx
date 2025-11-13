@@ -135,7 +135,6 @@ export default function MemberIndicationsPage() {
       const data = await membersApi.getDirectory();
       setMembers(data);
     } catch (error) {
-      console.error('Erro ao carregar membros:', error);
       triggerToast('Não foi possível carregar o diretório de membros.', 'error');
     } finally {
       setLoadingMembers(false);
@@ -148,7 +147,6 @@ export default function MemberIndicationsPage() {
       const data: IndicationList = await indicationsApi.getAll(token);
       setIndications(data);
     } catch (error: any) {
-      console.error('Erro ao carregar indicações:', error);
       if (error?.response?.status === 401) {
         handleUnauthorized();
       } else {
@@ -179,7 +177,6 @@ export default function MemberIndicationsPage() {
       triggerToast('Login realizado com sucesso!', 'success');
       setLoginForm({ email: '', secret: '' });
     } catch (error: any) {
-      console.error('Erro no login de membro:', error);
       if (error?.response?.status === 401) {
         setLoginError('Credenciais inválidas. Verifique e tente novamente.');
       } else {
@@ -226,7 +223,6 @@ export default function MemberIndicationsPage() {
       }));
       await loadIndications(auth.token);
     } catch (error: any) {
-      console.error('Erro ao criar indicação:', error);
       if (error?.response?.status === 401) {
         handleUnauthorized();
         return;
@@ -255,7 +251,6 @@ export default function MemberIndicationsPage() {
       triggerToast('Status atualizado com sucesso!', 'success');
       await loadIndications(auth.token);
     } catch (error: any) {
-      console.error('Erro ao atualizar status da indicação:', error);
       if (error?.response?.status === 401) {
         handleUnauthorized();
         return;

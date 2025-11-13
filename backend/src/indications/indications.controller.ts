@@ -13,8 +13,12 @@ import { MemberJwtGuard } from '../common/guards/member-jwt.guard';
 import { CreateIndicationDto } from './dto/create-indication.dto';
 import { UpdateIndicationStatusDto } from './dto/update-indication-status.dto';
 import type { Request } from 'express';
+import type {
+  IndicationResponse,
+  MemberIndications,
+} from './indications.service';
 
-@Controller('indications')
+@Controller({ path: 'indications', version: '1' })
 @UseGuards(MemberJwtGuard)
 export class IndicationsController {
   constructor(private readonly indicationsService: IndicationsService) {}
@@ -23,7 +27,7 @@ export class IndicationsController {
   create(
     @Req() request: Request,
     @Body() createIndicationDto: CreateIndicationDto,
-  ) {
+  ): Promise<IndicationResponse> {
     return this.indicationsService.create(
       request.member!.id,
       createIndicationDto,
@@ -31,7 +35,7 @@ export class IndicationsController {
   }
 
   @Get()
-  findAll(@Req() request: Request) {
+  findAll(@Req() request: Request): Promise<MemberIndications> {
     return this.indicationsService.findForMember(request.member!.id);
   }
 
@@ -40,7 +44,7 @@ export class IndicationsController {
     @Req() request: Request,
     @Param('id') id: string,
     @Body() updateIndicationStatusDto: UpdateIndicationStatusDto,
-  ) {
+  ): Promise<IndicationResponse> {
     return this.indicationsService.updateStatus(
       request.member!.id,
       id,

@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { AdminAuthService } from '../../auth/admin-auth.service';
 
 @Injectable()
@@ -11,8 +12,8 @@ export class AdminGuard implements CanActivate {
   constructor(private readonly adminAuthService: AdminAuthService) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers['authorization'] as string | undefined;
+    const request = context.switchToHttp().getRequest<Request>();
+    const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException('Token de administrador não informado');
@@ -29,8 +30,9 @@ export class AdminGuard implements CanActivate {
       request.admin = payload;
       return true;
     } catch {
-      throw new UnauthorizedException('Token de administrador inválido ou expirado');
+      throw new UnauthorizedException(
+        'Token de administrador inválido ou expirado',
+      );
     }
   }
 }
-

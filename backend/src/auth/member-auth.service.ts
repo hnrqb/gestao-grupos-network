@@ -17,7 +17,9 @@ export class MemberAuthService {
 
   constructor(private readonly prisma: PrismaService) {
     if (!this.jwtSecret) {
-      throw new Error('MEMBER_JWT_SECRET is not defined in environment variables');
+      throw new Error(
+        'MEMBER_JWT_SECRET is not defined in environment variables',
+      );
     }
   }
 
@@ -66,7 +68,7 @@ export class MemberAuthService {
       }
 
       return member;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Token inválido ou expirado');
     }
   }
@@ -105,5 +107,3 @@ export class MemberAuthService {
     };
   }
 }
-
-

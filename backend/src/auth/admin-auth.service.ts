@@ -23,7 +23,9 @@ export class AdminAuthService {
     }
 
     if (!this.jwtSecret) {
-      throw new Error('ADMIN_JWT_SECRET is not defined in environment variables');
+      throw new Error(
+        'ADMIN_JWT_SECRET is not defined in environment variables',
+      );
     }
   }
 
@@ -64,7 +66,6 @@ export class AdminAuthService {
 
     const match = expiresIn.match(/^(\d+)([smhd])$/);
     if (!match) {
-      // fallback to 12 hours in seconds
       return 12 * 60 * 60;
     }
 
@@ -85,5 +86,3 @@ export class AdminAuthService {
     }
   }
 }
-
-

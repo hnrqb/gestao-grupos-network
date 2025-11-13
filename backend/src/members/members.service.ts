@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InvitationsService } from '../invitations/invitations.service';
 import { CreateMemberDto } from './dto/create-member.dto';
@@ -13,21 +17,20 @@ export class MembersService {
   ) {}
 
   async create(createMemberDto: CreateMemberDto) {
-    // Validate token
     const { application } = await this.invitationsService.validateToken(
       createMemberDto.token,
     );
 
-    // Check if member already exists for this application
     const existingMember = await this.prisma.member.findUnique({
       where: { applicationId: application.id },
     });
 
     if (existingMember) {
-      throw new BadRequestException('Cadastro já realizado para esta aplicação');
+      throw new BadRequestException(
+        'Cadastro já realizado para esta aplicação',
+      );
     }
 
-    // Create member
     const authSecret = this.memberAuthService.generateSecret();
     const authSecretHash = this.memberAuthService.hashSecret(authSecret);
 
@@ -51,7 +54,6 @@ export class MembersService {
       },
     });
 
-    // Mark token as used
     await this.invitationsService.markAsUsed(createMemberDto.token);
 
     const token = this.memberAuthService.generateToken(member);

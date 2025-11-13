@@ -63,7 +63,6 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      // Remove empty optional fields
       const cleanData = {
         token: data.token,
         ...(data.phone && { phone: data.phone }),

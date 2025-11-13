@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type { Member, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIndicationDto } from './dto/create-indication.dto';
 import { UpdateIndicationStatusDto } from './dto/update-indication-status.dto';
@@ -13,13 +14,40 @@ const memberSelect = {
   fullName: true,
   email: true,
   company: true,
-};
+} as const;
+
+type MemberSummary = Pick<Member, 'id' | 'fullName' | 'email' | 'company'>;
+type IndicationWithMembers = Prisma.IndicationGetPayload<{
+  include: {
+    fromMember: { select: typeof memberSelect };
+    toMember: { select: typeof memberSelect };
+  };
+}>;
+
+export interface IndicationResponse {
+  id: string;
+  contactInfo: string;
+  description: string;
+  status: IndicationWithMembers['status'];
+  createdAt: Date;
+  updatedAt: Date;
+  fromMember: MemberSummary;
+  toMember: MemberSummary;
+}
+
+export interface MemberIndications {
+  created: IndicationResponse[];
+  received: IndicationResponse[];
+}
 
 @Injectable()
 export class IndicationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(memberId: string, dto: CreateIndicationDto) {
+  async create(
+    memberId: string,
+    dto: CreateIndicationDto,
+  ): Promise<IndicationResponse> {
     if (memberId === dto.targetMemberId) {
       throw new BadRequestException('Não é possível indicar a si mesmo');
     }
@@ -49,7 +77,7 @@ export class IndicationsService {
     return this.toResponse(indication);
   }
 
-  async findForMember(memberId: string) {
+  async findForMember(memberId: string): Promise<MemberIndications> {
     const [created, received] = await Promise.all([
       this.prisma.indication.findMany({
         where: { fromMemberId: memberId },
@@ -79,7 +107,7 @@ export class IndicationsService {
     memberId: string,
     indicationId: string,
     dto: UpdateIndicationStatusDto,
-  ) {
+  ): Promise<IndicationResponse> {
     const indication = await this.prisma.indication.findUnique({
       where: { id: indicationId },
       include: {
@@ -115,7 +143,7 @@ export class IndicationsService {
     return this.toResponse(updated);
   }
 
-  private toResponse(indication: any) {
+  private toResponse(indication: IndicationWithMembers): IndicationResponse {
     return {
       id: indication.id,
       contactInfo: indication.contactInfo,
@@ -128,5 +156,3 @@ export class IndicationsService {
     };
   }
 }
-
-

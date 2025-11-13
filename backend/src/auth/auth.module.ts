@@ -12,5 +12,3 @@ import { AdminAuthController } from './admin-auth.controller';
   exports: [MemberAuthService, AdminAuthService],
 })
 export class AuthModule {}
-
-

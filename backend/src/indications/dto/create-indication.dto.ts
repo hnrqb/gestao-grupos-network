@@ -13,5 +13,3 @@ export class CreateIndicationDto {
   @IsNotEmpty()
   description: string;
 }
-
-

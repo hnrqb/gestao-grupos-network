@@ -17,7 +17,8 @@ export class CreateApplicationDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(50, { message: 'Por favor, explique com mais detalhes (mínimo 50 caracteres)' })
+  @MinLength(50, {
+    message: 'Por favor, explique com mais detalhes (mínimo 50 caracteres)',
+  })
   whyParticipate: string;
 }
-

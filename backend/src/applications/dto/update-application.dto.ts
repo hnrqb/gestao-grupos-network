@@ -1,10 +1,5 @@
 import { IsEnum, IsOptional, IsString } from 'class-validator';
-
-export enum ApplicationStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
+import { ApplicationStatus } from '@prisma/client';
 
 export class UpdateApplicationDto {
   @IsEnum(ApplicationStatus)
@@ -15,4 +10,3 @@ export class UpdateApplicationDto {
   @IsOptional()
   rejectionReason?: string;
 }
-

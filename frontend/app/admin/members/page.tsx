@@ -29,7 +29,6 @@ export default function MembersAdminPage() {
       const data = await membersApi.getAll();
       setMembers(data);
     } catch (error: any) {
-      console.error('Erro ao carregar membros:', error);
       if (error?.response?.status === 401) {
         logout();
       } else {
@@ -51,7 +50,6 @@ export default function MembersAdminPage() {
       setToastType('success');
       setShowToast(true);
     } catch (error: any) {
-      console.error('Erro ao atualizar lista de membros:', error);
       if (error?.response?.status === 401) {
         logout();
       } else {

@@ -32,8 +32,6 @@ export default function ApplyPage() {
       await applicationsApi.create(data);
       setSuccess(true);
       reset();
-      
-      // Scroll to success message
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
       setError(

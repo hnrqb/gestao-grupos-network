@@ -2,7 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { MemberAuthService } from './member-auth.service';
 import { MemberLoginDto } from './dto/member-login.dto';
 
-@Controller('members/auth')
+@Controller({ path: 'members/auth', version: '1' })
 export class MemberAuthController {
   constructor(private readonly memberAuthService: MemberAuthService) {}
 
@@ -11,5 +11,3 @@ export class MemberAuthController {
     return this.memberAuthService.login(loginDto.email, loginDto.secret);
   }
 }
-
-

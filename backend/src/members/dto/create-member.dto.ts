@@ -21,4 +21,3 @@ export class CreateMemberDto {
   @IsOptional()
   linkedinUrl?: string;
 }
-

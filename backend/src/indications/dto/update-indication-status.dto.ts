@@ -5,5 +5,3 @@ export class UpdateIndicationStatusDto {
   @IsEnum(IndicationStatus)
   status: IndicationStatus;
 }
-
-

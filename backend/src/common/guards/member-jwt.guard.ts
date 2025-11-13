@@ -4,6 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { MemberAuthService } from '../../auth/member-auth.service';
 
 @Injectable()
@@ -11,7 +12,7 @@ export class MemberJwtGuard implements CanActivate {
   constructor(private readonly memberAuthService: MemberAuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request>();
     const authHeader = request.headers.authorization;
 
     if (!authHeader || typeof authHeader !== 'string') {
@@ -31,5 +32,3 @@ export class MemberJwtGuard implements CanActivate {
     return true;
   }
 }
-
-

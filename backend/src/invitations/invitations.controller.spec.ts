@@ -1,18 +1,23 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { InvitationsController } from './invitations.controller';
+import { InvitationsService } from './invitations.service';
 
 describe('InvitationsController', () => {
   let controller: InvitationsController;
+  let validateMock: jest.Mock;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [InvitationsController],
-    }).compile();
-
-    controller = module.get<InvitationsController>(InvitationsController);
+  beforeEach(() => {
+    validateMock = jest.fn();
+    controller = new InvitationsController({
+      validateToken: validateMock,
+    } as unknown as InvitationsService);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  it('should forward token validation', async () => {
+    validateMock.mockResolvedValue({ valid: true });
+
+    const result = await controller.validateToken('token');
+
+    expect(validateMock).toHaveBeenCalledWith('token');
+    expect(result).toEqual({ valid: true });
   });
 });

@@ -10,5 +10,3 @@ import { AuthModule } from '../auth/auth.module';
   providers: [DashboardService],
 })
 export class DashboardModule {}
-
-

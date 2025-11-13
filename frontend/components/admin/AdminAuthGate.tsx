@@ -89,7 +89,6 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
       setKeyInput('');
       showToastMessage('Autenticação realizada com sucesso!', 'success');
     } catch (error: any) {
-      console.error('Erro ao autenticar administrador:', error);
       showToastMessage(
         error?.response?.data?.message ||
           'Não foi possível autenticar. Verifique a chave informada.',

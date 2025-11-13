@@ -3,7 +3,7 @@ import { DashboardService } from './dashboard.service';
 import type { PerformanceDashboard } from './dashboard.service';
 import { AdminGuard } from '../common/guards/admin.guard';
 
-@Controller('admin/dashboard')
+@Controller({ path: 'admin/dashboard', version: '1' })
 @UseGuards(AdminGuard)
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
@@ -13,5 +13,3 @@ export class DashboardController {
     return this.dashboardService.getPerformanceMetrics();
   }
 }
-
-

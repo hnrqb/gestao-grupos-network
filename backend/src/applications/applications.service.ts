@@ -1,14 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
-import { ApplicationStatus } from './dto/update-application.dto';
+import { ApplicationStatus } from '@prisma/client';
 
 @Injectable()
 export class ApplicationsService {
+  private readonly invitationExpirationDays = 7;
+
   constructor(private prisma: PrismaService) {}
 
   async create(createApplicationDto: CreateApplicationDto) {
-    // Check if email already exists
     const existingApplication = await this.prisma.application.findUnique({
       where: { email: createApplicationDto.email },
     });
@@ -35,7 +40,7 @@ export class ApplicationsService {
 
   async findAll(status?: ApplicationStatus) {
     const where = status ? { status } : {};
-    
+
     return this.prisma.application.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -73,15 +78,15 @@ export class ApplicationsService {
     const application = await this.findOne(id);
 
     if (application.status !== ApplicationStatus.PENDING) {
-      throw new BadRequestException('Apenas aplicações pendentes podem ser aprovadas');
+      throw new BadRequestException(
+        'Apenas aplicações pendentes podem ser aprovadas',
+      );
     }
 
-    // Generate unique token
     const token = this.generateToken();
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // Token expires in 7 days
+    expiresAt.setDate(expiresAt.getDate() + this.invitationExpirationDays);
 
-    // Update application and create invitation token
     await this.prisma.$transaction([
       this.prisma.application.update({
         where: { id },
@@ -101,14 +106,6 @@ export class ApplicationsService {
 
     const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/register/${token}`;
 
-    // Simulate email sending (console.log for development)
-    console.log('\n📧 ===== EMAIL SIMULATION =====');
-    console.log(`Para: ${application.email}`);
-    console.log(`Nome: ${application.fullName}`);
-    console.log(`Link de cadastro: ${inviteLink}`);
-    console.log(`Expira em: ${expiresAt.toLocaleDateString('pt-BR')}`);
-    console.log('================================\n');
-
     return {
       token,
       inviteLink,
@@ -121,7 +118,9 @@ export class ApplicationsService {
     const application = await this.findOne(id);
 
     if (application.status !== ApplicationStatus.PENDING) {
-      throw new BadRequestException('Apenas aplicações pendentes podem ser rejeitadas');
+      throw new BadRequestException(
+        'Apenas aplicações pendentes podem ser rejeitadas',
+      );
     }
 
     await this.prisma.application.update({
