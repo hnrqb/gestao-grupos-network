@@ -68,8 +68,3 @@ Backend:
 cd backend
 npm test
 ```
-
-## Observações
-- Certifique-se de que `NEXT_PUBLIC_API_URL` (no frontend) aponta para `/api/v1`.
-- Após alterar o schema Prisma, execute `npx prisma migrate dev`.
-- Para recriar o banco em desenvolvimento: `npx prisma migrate reset`.
