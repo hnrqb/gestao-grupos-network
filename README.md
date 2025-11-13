@@ -21,7 +21,12 @@ cd gestao-grupos-network
 ```
 
 ### 2. Preparar o banco de dados
-Use uma instalação local ou um container Docker:
+Suba o PostgreSQL com o `docker-compose.yml` disponível na raiz:
+```bash
+docker-compose up -d db
+```
+
+Caso prefira criar um container manualmente:
 ```bash
 docker run --name networking-db -e POSTGRES_USER=networking -e POSTGRES_PASSWORD=networking -e POSTGRES_DB=networking_db -p 5432:5432 -d postgres:14
 ```
